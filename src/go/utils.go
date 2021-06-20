@@ -4,7 +4,7 @@ func load_data() {
 	return
 }
 
-func svae_data() {
+func save_data() {
 	return
 }
 
