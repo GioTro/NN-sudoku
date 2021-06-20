@@ -3,7 +3,6 @@ from typing import Tuple
 from pathlib import Path
 from torch.utils.data import DataLoader, Dataset
 
-
 class Dataset(Dataset):
     def __init__(self, dataset : dict):
         self.dataset = dataset

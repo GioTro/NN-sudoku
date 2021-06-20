@@ -6,17 +6,27 @@ import numpy as np
 from pathlib import Path
 from tqdm import tqdm
 
+"""
+Notes:
+	- This is probably slow will only run ones.
+
+	- Consider skipping making multiple files and dump everything in one.
+
+	- The difficulty setting is not 'true' sudoku rated.
+"""
+
+
 class Board:
     def __init__(self):
         self.board = np.zeros(shape=(9, 9))
         self.solved = False
         self.solution_count = 0
-    
+
     def reset(self):
         self.__init__()
 
     def valid_move(self, row : int, col : int, n : int) -> bool:
-        r_o, c_o = (row//3)*3, (col//3)*3   
+        r_o, c_o = (row//3)*3, (col//3)*3
         if n == 0:
             return False
         if n in self.board[row, :]:
@@ -24,16 +34,16 @@ class Board:
         if n in self.board[:, col]:
             return False
         if n in self.board[r_o:r_o+3, c_o:c_o+3]:
-            return False        
+            return False
         return True
-    
+
     def check_correct(self) -> bool:
         for row in 9:
             for col in 9:
                 if not self.valid_move(row, col, self.board[row, col]):
                     return False
         return True
-    
+
     def copy(self) -> np.array:
         return np.copy(self.board)
 
@@ -41,7 +51,7 @@ class Board:
 class SudokuSolver(Board):
     # self.board : np.array
     def __init__(self, difficulty : int):
-        super().__init__()
+        Board.__init__(self)
         self.difficulty = difficulty
 
     def recursive(self, condition):
@@ -52,9 +62,9 @@ class SudokuSolver(Board):
             for col in range(9):
                 if super().board[row, col] == 0:
                     for n in self.rgen(range(1, 10)):
-                        if condition() or not super().valid_move(row, col, n): 
+                        if condition() or not super().valid_move(row, col, n):
                             continue
-                        
+
                         super().board[row, col] = n
                         self.recursive()
                         super().board[row, col] = 0 # else backtrack
@@ -64,7 +74,7 @@ class SudokuSolver(Board):
     def find_first(self):
         self.recursive(lambda : super().solution_count > 0)
         return super().solution_count
-    
+
     def find_all(self):
         self.recursive(lambda : False)
         return super().solution_count
@@ -87,7 +97,7 @@ class SudokuSolver(Board):
                 super().board[x, y] = before
             else:
                 n_left -= 1
-        
+
         return (condition - n_left) == 0
 
     @ staticmethod
@@ -98,7 +108,7 @@ class SudokuSolver(Board):
         return iter(idx)
 
     @staticmethod
-    def rgen(r : range) -> iter: 
+    def rgen(r : range) -> iter:
         g = [i for i in r]
         random.shuffle(g)
         return iter(g)
@@ -115,7 +125,7 @@ class SudokuSolver(Board):
 
 class Boardgenerator(SudokuSolver):
     def __init__(self, difficulty : int, end_at : int):
-        super().__init__(difficulty)
+        super(Boardgenerator, self).__init__(difficulty)
         self.end_at = end_at
         # self.encoder = lambda x : (np.eye(10)[x.flatten()]).reshape(-1, 1)
 
@@ -141,7 +151,7 @@ if __name__ == '__main__':
     ]
 
     for p in paths:
-        p.mkdir(exists_ok = True)
+        p.mkdir(exist_ok = True)
         b = Boardgenerator(40, do[p.stem])
         b = iter(b)
         idx = 0
