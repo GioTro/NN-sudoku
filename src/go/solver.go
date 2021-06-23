@@ -2,75 +2,79 @@ package main
 
 import (
 	"fmt"
+	"sync"
 )
 
 type board struct {
-	board          [9][9]int8
-	solved         [9][9]int8
+	board          [][]int8
+	solution       [][]int8
 	solution_count int
 	idx            *indexmap
-	get            func(int, int, string, *board) [9]int8
+	//get            func(int, int, string, *board) []int8
 }
 
 type indexmap struct {
-	rmap, cmap [9][9]index
-	sqrmap     [3][3][9]index
-	all        [81]index
-	square     func(int, int, [3][3][9]index) [9]index
-	row        func(int, [9][9]index) [9]index
-	col        func(int, [9][9]index) [9]index
+	rmap, cmap [][]index
+	sqrmap     [][][]index
+	all        []index
+	square     func(int, int, [][][]index) []index
+	row        func(int, [][]index) []index
+	col        func(int, [][]index) []index
 }
 
 type index struct {
 	row, col int
 }
 
-func make_board(idx *indexmap) board {
-	var b [9][9]int8
-	var c [9][9]int8
-	return board{
+func get(row, col int, s string, board *[][]int8, idx *indexmap) []int8 {
+	var out = make([]int8, 9)
+	var idxarr []index
+
+	if s == "row" {
+		idxarr = (idx).row(row, (idx).rmap)
+	} else if s == "col" {
+		idxarr = (idx).col(col, (idx).cmap)
+	} else if s == "sqr" {
+		idxarr = (idx).square(row/3, col/3, (idx).sqrmap)
+	} else {
+		fmt.Println("danger") // for debugging
+	}
+
+	for i, idx := range idxarr {
+		out[i] = (*board)[idx.row][idx.col]
+	}
+
+	return out
+}
+
+func make_board(idx *indexmap) *board {
+	var b = make2dint8(9)
+	var c = make2dint8(9)
+	var out = board{
 		board:          b,
-		solved:         c,
+		solution:       c,
 		solution_count: 0,
 		idx:            idx,
-		get: func(row, col int, s string, b *board) [9]int8 {
-			var idx = (*b).idx
-			var out [9]int8
-			var idxarr [9]index
-
-			if s == "row" {
-				idxarr = (idx).row(row, (idx).rmap)
-			} else if s == "col" {
-				idxarr = (idx).col(col, (idx).cmap)
-			} else if s == "sqr" {
-				idxarr = (idx).square(row/3, col/3, (idx).sqrmap)
-			} else {
-				fmt.Println("danger") // for debugging
-			}
-
-			for i, idx := range idxarr {
-				out[i] = (*b).board[idx.row][idx.col]
-			}
-
-			return out
-		},
 	}
+	return &out
 }
 
 func make_indexmap() indexmap {
-	var rows [9][9]index
-	var cols [9][9]index
-	var all [81]index
-	var squares [3][3][9]index
-
+	var rows = make([][]index, 9) //[][]index
+	var cols = make([][]index, 9) //[][]index
+	var all = make([]index, 81)
+	var squares = make([][][]index, 3)
+	squares[0] = make([][]index, 3)
+	squares[1] = make([][]index, 3)
+	squares[2] = make([][]index, 3)
 	// make row and col map
 	var count int
-	for i := 0; i < 10; i++ {
-		var r [9]index
-		var c [9]index
-		for j := 0; j < 10; j++ {
-			r[i] = index{row: i, col: j}
-			c[i] = index{row: j, col: i}
+	for i := 0; i < 9; i++ {
+		var r = make([]index, 9)
+		var c = make([]index, 9)
+		for j := 0; j < 9; j++ {
+			r[j] = index{row: i, col: j}
+			c[j] = index{row: j, col: i}
 			all[count] = index{row: i, col: j}
 			count++
 		}
@@ -79,7 +83,7 @@ func make_indexmap() indexmap {
 	}
 
 	for i := 0; i < 9; i++ {
-		var s [9]index
+		var s = make([]index, 9)
 		var count int
 		for j := 0; j < 3; j++ {
 			for k := 0; k < 3; k++ {
@@ -98,25 +102,25 @@ func make_indexmap() indexmap {
 		sqrmap: squares,
 		all:    all,
 
-		square: func(row int, col int, sm [3][3][9]index) [9]index {
+		square: func(row int, col int, sm [][][]index) []index {
 			return sm[row][col]
 		},
 
-		row: func(idx int, rm [9][9]index) [9]index {
+		row: func(idx int, rm [][]index) []index {
 			return rm[idx]
 		},
 
-		col: func(idx int, cm [9][9]index) [9]index {
+		col: func(idx int, cm [][]index) []index {
 			return cm[idx]
 		},
 	}
 }
 
-func valid_board(b *board) bool {
+func valid_board(b *[][]int8, idx *indexmap) bool {
 	var nline = numline_int8(1, 10)
 
 	// Helper function
-	var member = func(a [9]int8, b []int8) bool {
+	var member = func(a []int8, b []int8) bool {
 		var count int
 		for _, a_val := range a {
 			for _, b_val := range b {
@@ -137,18 +141,18 @@ func valid_board(b *board) bool {
 	}
 	// rows
 	for row := 0; row < 9; row++ {
-		if !member((*b).get(row, 0, "row", b), nline) {
+		if !member(get(row, 0, "row", b, idx), nline) {
 			return false
 		}
 	}
 	for col := 0; col < 9; col++ {
-		if !member((*b).get(0, col, "col", b), nline) {
+		if !member(get(0, col, "col", b, idx), nline) {
 			return false
 		}
 	}
 	for i := 0; i < 3; i++ {
 		for j := 0; j < 3; j++ {
-			if !member((*b).get(i, j, "sqr", b), nline) {
+			if !member(get(i, j, "sqr", b, idx), nline) {
 				return false
 			}
 		}
@@ -157,26 +161,26 @@ func valid_board(b *board) bool {
 	return true
 }
 
-func valid_move(b *board, num int8, idx index) bool {
+func valid_move(num int8, idx index, idxmp *indexmap, b *[][]int8) bool {
 	if num == 0 {
 		return false
 	}
 
 	// row
-	for _, val := range (*b).get(idx.row, idx.col, "row", b) {
+	for _, val := range get(idx.row, idx.col, "row", b, idxmp) {
 		if num == val {
 			return false
 		}
 	}
 
 	// col
-	for _, val := range b.get(idx.row, idx.col, "col", b) {
+	for _, val := range get(idx.row, idx.col, "col", b, idxmp) {
 		if num == val {
 			return false
 		}
 	}
 	// sqr
-	for _, val := range b.get(idx.row, idx.col, "sqr", b) {
+	for _, val := range get(idx.row, idx.col, "sqr", b, idxmp) {
 		if num == val {
 			return false
 		}
@@ -185,131 +189,195 @@ func valid_move(b *board, num int8, idx index) bool {
 	return true
 }
 
-func recursive(limit int, b *board) {
-	/*
-		Recursively solves the board via backtracking.
-		Solves the board in place
+// func recursive(limit int, b *board, ref [][]int8) {
+// 	/*
+// 		Recursively solves the board via backtracking.
+// 		Solves the board in place
 
-		limit number of solution to find. This is going to be
-		either 1 for find first solution or 2 to check if the
-		solution is unique.
-	*/
-	if !((*b).solution_count < limit) {
-		return
-	}
-	var aidx = (*b).index.all
-	for _, ridx := range shuffled(len((*b).idx.all)) {
-		var row = aidx[ridx].row
-		var col = aidx[ridx].col
-		if (*b).board[row][col] == 0 && (*b).solution_count < limit {
-			for _, num := range numline_int_eight(1, 10, true) {
-				if !((*b).solution_count < limit) || !valid_move(b, int8(num), aidx[ridx]) {
-					continue
-				}
+// 		limit number of solution to find. This is going to be
+// 		either 1 for find first solution or 2 to check if the
+// 		solution is unique.
+// 	*/
+// 	if !(b.solution_count < limit) {
+// 		return
+// 	}
 
-				(*b).board[row][col] = num
-				recursive(limit, b)
+// 	var count int
+// 	for row := 0; row < 9; row++ {
+// 		for col := 0; col < 9; col++ {
+// 			var idx = index{row: row, col: col}
+// 			count++
+// 			if ref[idx.row][idx.col] == 0 {
+// 				var guess = shuffled_int8(numline_int8(1, 10))
+// 				for _, num := range guess {
+// 					if valid_move(b, num, idx) {
+// 						ref[idx.row][idx.col] = num
+// 						if !(b.solution_count < limit) {
+// 							return
+// 						}
+// 						recursive(limit, b, ref)
 
-				// Check this statement if this would be correct
-				(*b).board[row][col] = int8(0) // back track
-			}
-
-		}
-	}
-	if valid_board(b) {
-		(*b).solution_count++
-	}
-	return
-}
+// 						// Check this statement if this would be correct
+// 						ref[idx.row][idx.col] = int8(0) // back track
+// 					}
+// 				}
+// 				return
+// 			}
+// 		}
+// 	}
+// 	b.board = deep_copy(ref)
+// 	if valid_board(b) {
+// 		pretty_print(&b.board)
+// 		b.solution_count++
+// 	}
+// }
 
 // findfirst solution, returns true if
 // there was a solution to be found
-func find_first(b *board) bool {
-	recursive(1, b)
+// func find_first(b *board) bool {
+// 	if valid_board(b) {
+// 		return true
+// 	}
 
-	if (*b).solution_count == 0 {
-		return false
-	} else {
-		return true
-	}
-}
+// 	var ref = deep_copy(b.board)
+// 	recursive(1, b, ref)
 
-// Alias
-func find_more(b *board) bool {
-	recursive(2, b)
-	if (*b).solution_count > 1 {
-		return true
-	} else {
-		return false
-	}
-}
+// 	if b.solution_count == 0 {
+// 		return false
+// 	} else {
+// 		return true
+// 	}
+// }
 
-func deep_copy(source [9][9]int8) (copy [9][9]int8) {
-	for i, arr := range source {
-		for j, num := range arr {
-			copy[i][j] = num
+// // Alias
+// func find_more(b *board) bool {
+// 	var ref = deep_copy(b.board)
+// 	recursive(2, b, ref)
+// 	if (*b).solution_count > 1 {
+// 		return true
+// 	} else {
+// 		return false
+// 	}
+// }
+
+func make_valid_board(b *board) {
+	// this is fast when generating the first board.
+	var nline = numline_int8(1, 10)
+	for {
+		for _, idx := range (*b.idx).all {
+			var guess = shuffled_int8(nline)
+			for _, g := range guess {
+				if valid_move(g, idx, b.idx, &b.board) {
+					b.board[idx.row][idx.col] = g
+				}
+			}
 		}
+		if valid_board(&b.board, b.idx) {
+			break
+		}
+		b.board = make2dint8(9)
 	}
-	return copy
-
 }
 
 /*
 	Try removing random points
 */
 
-func pluck(limit int, b *board) bool {
-	var plucked int
-	for _, idx := range shuffled_index((*b).idx.all) {
-		if (*b).board[idx.row][idx.col] != 0 {
-			// try
-			var tmp = (*b).board[idx.row][idx.col]
-			(*b).board[idx.row][idx.col] = 0
+func pluck(keep int, b *board) bool {
+	var idx = shuffled_index(b.idx.all)
+	var pointer int
+	var reference int
 
-			// if there is more than one solution
-			if find_more(b) {
-				// restore value
-				(*b).board[idx.row][idx.col] = tmp
-			} else {
-				plucked++
-			}
-		}
-	}
-	if plucked > limit {
-		return false
-	} else {
-		return true
-	}
-}
+	var left = len(idx)
+	for (reference != -1) && left > keep {
+		var guess = idx[pointer]
+		pointer++
 
-func generate(limit int, b *board) {
-	for true {
-		// Its faster to start over
-		// compared to backtracking
-		// if pluck fails start over
-
-		var new [9][9]int8
-		(*b).board = new
-
-		if !find_first(b) {
+		if (*b).board[guess.row][guess.col] == 0 {
 			continue
 		}
 
-		(*b).solved = deep_copy((*b).board)
+		var tmp = (*b).board[guess.row][guess.col]
+		(*b).board[guess.row][guess.col] = int8(0)
 
-		if pluck(limit, b) {
-			break
+		// if any other choice then tmp is valid then
+		// we can't remove tmp
+
+		for _, num := range numline_int8(1, 10) {
+			if num == tmp {
+				continue
+			}
+			if valid_move(num, guess, b.idx, &b.board) {
+				// if true restore it and break
+				(*b).board[guess.row][guess.col] = tmp
+				break
+			}
 		}
+		if (*b).board[guess.row][guess.col] == 0 {
+			left--
+		}
+
+		if pointer >= 80 && left > keep {
+			pointer = 0
+			if (reference - left) < 5 {
+				reference = -1
+			} else {
+				reference = left
+			}
+		}
+	}
+	if left == keep {
+		return true
+	} else {
+		return false
 	}
 }
 
-func process(limit int, idx *indexmap) (*[9][9]int8, *[9][9]int8) {
-	// defer wg.Done()
+func generate(keep int, idx *indexmap) (b *board) {
+	for {
+		b = make_board(idx)
 
-	b = make_board(idx)
-	generate(limit, &b)
+		//b = tmp
+		make_valid_board(b)
+
+		b.solution = deep_copy(b.board)
+		break
+		// if !check_equality(&b.solution, &b.board) {
+		// 	fmt.Println("problem")
+		// 	if !valid_board(&b.board, b.idx) {
+		// 		fmt.Println("problem")
+		// 	}
+		// }
+
+		//var tot = float64(time.Since(s_tot).Nanoseconds())
+		// if pluck(keep, b) {
+		// 	break
+		// }
+		//t4 = float64(time.Since(start).Nanoseconds())
+	}
+	return b
+}
+
+func process(keep int, idx *indexmap, ch chan<- *sudoku, wg *sync.WaitGroup) {
+	defer wg.Done()
+	var b = generate(keep, idx)
+	ch <- &sudoku{
+		solved:   b.solution,
+		unsolved: b.board,
+	}
+}
+
+func process_single(keep int, idx *indexmap) sudoku {
+	// defer wg.Done()
+	// var b = make_board(idx)
+	var b = generate(keep, idx)
 
 	// ch <- [2][9][9]int8
+	//out[0] = &b.board
+	//out[1] = &b.solved
 
-	return &b.board, &b.solved
+	return sudoku{
+		solved:   b.solution,
+		unsolved: b.board,
+	}
 }
