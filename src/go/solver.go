@@ -342,18 +342,6 @@ func generate(keep int, idx *indexmap) (b *board) {
 
 		b.solution = deep_copy(b.board)
 		break
-		// if !check_equality(&b.solution, &b.board) {
-		// 	fmt.Println("problem")
-		// 	if !valid_board(&b.board, b.idx) {
-		// 		fmt.Println("problem")
-		// 	}
-		// }
-
-		//var tot = float64(time.Since(s_tot).Nanoseconds())
-		// if pluck(keep, b) {
-		// 	break
-		// }
-		//t4 = float64(time.Since(start).Nanoseconds())
 	}
 	return b
 }

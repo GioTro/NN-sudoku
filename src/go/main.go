@@ -63,6 +63,22 @@ func fill(ch chan<- *[9][9]int8) {
 	}
 	ch <- &a
 }
+func fill3(a *[9]int8, wg *sync.WaitGroup) {
+	defer wg.Done()
+	for j := 0; j < 9; j++ {
+		a[j] = int8(j)
+	}
+}
+func fill2(ch chan<- *[9][9]int8) {
+	var a [9][9]int8
+	var wg sync.WaitGroup
+	wg.Add(9)
+	for i := 0; i < 9; i++ {
+		go fill3(&a[i], &wg)
+	}
+	wg.Wait()
+	ch <- &a
+}
 
 func main() {
 
@@ -80,7 +96,6 @@ func main() {
 		out[i] = *(<-ch)
 	}
 	var duration = time.Since(start).Seconds()
-	fmt.Println(duration)
 
 	for i, idx := range rand_idx(n) {
 		var c = &out[idx]
@@ -90,6 +105,7 @@ func main() {
 			break
 		}
 	}
+	fmt.Println(duration)
 	// var n_train = int(1e3) // how training examples to generate
 	// var n_val = int(0)     // how val examples to generate
 	// var n_test = int(0)    // how test examples to generate
