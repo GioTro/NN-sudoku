@@ -73,6 +73,12 @@ type sudoku struct {
 // 	ch_in <- (*b).board
 // }
 
+func batch_process(n, keep int, ch chan set) {
+	for i := 0; i < n; i++ {
+		go process(keep, ch)
+	}
+}
+
 func main() {
 
 	// currently it can generate a valid board in
@@ -82,12 +88,13 @@ func main() {
 	// is taking too much time.
 
 	const n = int(1000)
-	//var idx = make_indexmap()
 	var out [n]set
+	var ch = make(chan set)
 
+	go batch_process(n, 40, ch)
 	var start = time.Now()
 	for i := 0; i < n; i++ {
-		out[i] = process(40)
+		out[i] = <-ch
 	}
 	var duration = time.Since(start).Seconds()
 

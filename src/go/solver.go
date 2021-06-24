@@ -165,7 +165,7 @@ func plucker(keep int, b board) (board, int) {
 	return b, left
 }
 
-func process(keep int) set {
+func process(keep int, ch_out chan<- set) {
 	var b, c board
 	var left int
 
@@ -175,9 +175,9 @@ func process(keep int) set {
 	b = <-out
 	c, left = plucker(keep, b)
 	if left > keep {
-		return process(keep)
+		process(keep, ch_out)
 	} else {
-		return set{
+		ch_out <- set{
 			solved:   b,
 			unsolved: c,
 		}
