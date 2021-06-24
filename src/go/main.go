@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"sync"
 	"time"
 )
 
@@ -15,20 +14,20 @@ type sudoku struct {
 // 	wg.Wait()
 // }
 
-func batch_process(n int, ch chan *sudoku) {
-	//defer close(ch)
-	var wg sync.WaitGroup
-	var idxmap = make_indexmap()
+// func batch_process(n int, ch chan sudoku) {
+// 	//defer close(ch)
+// 	var wg sync.WaitGroup
+// 	var idxmap = make_indexmap()
 
-	for i := 0; i < n; i++ {
-		wg.Add(1)
-		go process(50, &idxmap, ch, &wg)
-		if i%3 == 0 {
-			wg.Wait()
-		}
-	}
-	//wg.Wait()
-}
+// 	for i := 0; i < n; i++ {
+// 		wg.Add(1)
+// 		go process(50, &idxmap, ch, &wg)
+// 		if i%3 == 0 {
+// 			wg.Wait()
+// 		}
+// 	}
+// 	//wg.Wait()
+// }
 
 // func test_process(n int) bool {
 // 	var idxmap = make_indexmap()
@@ -52,59 +51,56 @@ func batch_process(n int, ch chan *sudoku) {
 // 	return true
 // }
 
-func fill(ch chan<- *[9][9]int8) {
-	var count int8
-	var a [9][9]int8
-	for i := range a {
-		for j := range (a)[i] {
-			(a)[i][j] = count
-			count++
-		}
-	}
-	ch <- &a
-}
-func fill3(a *[9]int8, wg *sync.WaitGroup) {
-	defer wg.Done()
-	for j := 0; j < 9; j++ {
-		a[j] = int8(j)
+func push(n int, ch chan<- bool) {
+	for i := 0; i < n; i++ {
+		ch <- true
 	}
 }
-func fill2(ch chan<- *[9][9]int8) {
-	var a [9][9]int8
-	var wg sync.WaitGroup
-	wg.Add(9)
-	for i := 0; i < 9; i++ {
-		go fill3(&a[i], &wg)
+func plistener(n_workers int, n int, ch_in chan board, ch_out chan sudoku) {
+	var idx = make_indexmap()
+	var signal = make(chan bool)
+	go push(n, signal)
+
+	for i := 0; i < n_workers; i++ {
+		go solver(50, ch_in, ch_out)
+		go worker(n_workers, &idx, ch_in, signal)
 	}
-	wg.Wait()
-	ch <- &a
+}
+
+func single(keep int, idx *indexmap, ch_in chan<- [][]int8) {
+	var b = make_board(idx)
+	make_valid_board(b)
+	ch_in <- (*b).board
 }
 
 func main() {
 
-	const n = int(1e6)
+	const n = int(1)
 
-	var out [n][9][9]int8
-	var ch = make(chan *[9][9]int8)
-
-	for i := 0; i < n; i++ {
-		go fill(ch)
-	}
+	var out [n][][]int8
+	//var ch_out = make(chan sudoku)
+	var ch_out = make(chan [][]int8)
 
 	var start = time.Now()
+	var idx = make_indexmap()
+	//go plistener(1, n, ch_in, ch_out)
+
 	for i := 0; i < n; i++ {
-		out[i] = *(<-ch)
+		go single(50, &idx, ch_out)
+	}
+
+	var count int
+	for i := 0; i < n; i++ {
+		out[count] = <-ch_out
+		count++
 	}
 	var duration = time.Since(start).Seconds()
 
-	for i, idx := range rand_idx(n) {
-		var c = &out[idx]
-		var d = &out[idx+1]
-		fmt.Println(c == d)
-		if i > 100 {
-			break
-		}
+	for _, b := range out {
+		var idx = make_indexmap()
+		fmt.Println(valid_board(&b, &idx))
 	}
+
 	fmt.Println(duration)
 	// var n_train = int(1e3) // how training examples to generate
 	// var n_val = int(0)     // how val examples to generate

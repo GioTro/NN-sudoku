@@ -346,12 +346,33 @@ func generate(keep int, idx *indexmap) (b *board) {
 	return b
 }
 
-func process(keep int, idx *indexmap, ch chan<- *sudoku, wg *sync.WaitGroup) {
-	defer wg.Done()
+func process(keep int, idx *indexmap, ch chan<- sudoku, wg *sync.WaitGroup) {
 	var b = generate(keep, idx)
-	ch <- &sudoku{
+	ch <- sudoku{
 		solved:   b.solution,
 		unsolved: b.board,
+	}
+}
+
+func solver(keep int, ch_in chan board, ch_out chan<- sudoku) {
+	for b := range ch_in {
+		var c = deep_copy(b.board)
+		pluck(keep, &b)
+		ch_out <- sudoku{
+			solved:   c,
+			unsolved: deep_copy(b.board),
+		}
+	}
+}
+
+func worker(keep int, idx *indexmap, ch chan<- board, signal chan bool) {
+	for p := range signal {
+		if p {
+			p = !p
+		}
+		var b = make_board(idx)
+		make_valid_board(b)
+		ch <- *b
 	}
 }
 
