@@ -75,6 +75,12 @@ func single(keep int, idx *indexmap, ch_in chan<- [][]int8) {
 
 func main() {
 
+	// currently it can generate a valid board in
+	// .1 seconds I would like to make it a bit faster
+	// then make the goroutines more efficient.
+	// but I will likely use this setup because this
+	// is taking too much time.
+
 	const n = int(1)
 
 	var out [n][][]int8
