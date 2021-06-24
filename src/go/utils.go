@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"strconv"
 )
 
@@ -22,23 +23,28 @@ func pretty_print(b board) {
 	fmt.Println(s)
 }
 
+func save_data(inp []set, path string) {
+	f, err := os.Create(path)
+	if err != nil {
+		panic(err)
+	}
+
+	defer f.Close()
+	for _, o := range inp {
+		var buffer string
+		for _, i := range o.solved {
+			buffer += strconv.Itoa(int(i))
+		}
+		buffer += " "
+		for _, i := range o.unsolved {
+			buffer += strconv.Itoa(int(i))
+		}
+		buffer += "\n"
+		f.WriteString(buffer)
+	}
+}
+
 func load_data() {
-	return
-}
-
-func save_data() {
-	return
-}
-
-func save_data_readable() {
-	return
-}
-
-func load_data_readable() {
-	return
-}
-
-func preprocess() {
 	return
 }
 

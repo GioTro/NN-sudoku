@@ -2,16 +2,10 @@ package main
 
 import (
 	"fmt"
-	"math/rand"
+	"runtime"
 	"sync"
 	"time"
 )
-
-// func batch_process(n, keep int, ch chan set) {
-// 	for i := 0; i < n; i++ {
-// 		go process(keep, ch)
-// 	}
-// }
 
 func worker(n, keep int, ch chan set) {
 	var ch_out = make(chan board)
@@ -21,7 +15,7 @@ func worker(n, keep int, ch chan set) {
 		go solver(b, ch_out)
 	}
 	wg.Add(n)
-	for i := 5; i > 0; i-- {
+	for i := 20; i > 0; i-- {
 		go listen(n, keep, ch_out, ch, &wg)
 	}
 	wg.Wait()
@@ -46,68 +40,32 @@ func listen(n, keep int, ch chan board, ch_out chan set, wg *sync.WaitGroup) {
 	}
 }
 
-// func process(keep int, ch_out chan<- set) {
-// 	var b, c board
-// 	var left int
-
-// 	// var solved board
-// 	var out = make(chan board)
-// 	go solver(b, out)
-// 	b = <-out
-// 	c, left = plucker(keep, b)
-// 	if left > keep {
-// 		process(keep, ch_out)
-// 	} else {
-// 		ch_out <- set{
-// 			solved:   b,
-// 			unsolved: c,
-// 		}
-// 	}
-// }
-
-// func process_single(keep int) set {
-// 	var b, c board
-// 	var left int
-// 	var out = make(chan board)
-// 	go solver(b, out)
-// 	b = <-out
-// 	c, left = plucker(keep, b)
-
-// 	if left > keep {
-// 		return process_single(keep)
-// 	} else {
-// 		return set{
-// 			solved:   b,
-// 			unsolved: c,
-// 		}
-// 	}
-// }
-
 func main() {
+	runtime.GOMAXPROCS(8)
 
-	// currently it can generate a valid board in
-	// .1 seconds I would like to make it a bit faster
-	// then make the goroutines more efficient.
-	// but I will likely use this setup because this
-	// is taking too much time.
+	// currently it can generate a valid board in ~.01 seconds
+	// There is a lot of overhead in running this concurrently
+	// Pick suitable settings for you machine and fly like a falcon.
 
-	const n = int(10000)
-	var out [n]set
-	var ch = make(chan set)
-
-	go worker(n, 40, ch)
+	const n = int(1e5)
+	const n_per_batch = int(1e4)
+	var out = make([]set, n)
+	//var ch = make(chan set)
+	var idx int
 
 	var start = time.Now()
-	for i := 0; i < n; i++ {
-		out[i] = <-ch
+	for i := 0; i < n/n_per_batch; i++ {
+		var ch = make(chan set)
+		go worker(n_per_batch, 40, ch)
+
+		for i := 0; i < n_per_batch; i++ {
+			out[idx] = <-ch
+			idx++
+		}
+		fmt.Println("Generated ", idx, " elapsed time ", time.Since(start).Minutes(), " minutes!")
 	}
 	var duration = time.Since(start).Seconds()
 
-	for _, o := range out {
-		fmt.Println(valid_board(o.solved))
-	}
-	var rnd = rand.Intn(len(out))
-	pretty_print(out[rnd].solved)
-	pretty_print(out[rnd].unsolved)
 	fmt.Println(duration)
+	save_data(out, "sudoku.txt")
 }
