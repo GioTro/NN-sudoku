@@ -69,7 +69,7 @@ func valid_move(g byte, idx int, b board) bool {
 }
 
 func solver(b board, ch chan<- board) bool {
-	var shuffle_2 = func(a [9]byte) [9]byte {
+	var shuffle = func(a [9]byte) [9]byte {
 		rand.Seed(time.Now().UnixNano())
 		for i := len(a) - 1; i > 0; i-- {
 			var j = rand.Intn(i + 1)
@@ -93,7 +93,7 @@ func solver(b board, ch chan<- board) bool {
 		return true
 	}
 
-	for _, g := range shuffle_2([9]byte{1, 2, 3, 4, 5, 6, 7, 8, 9}) {
+	for _, g := range shuffle([9]byte{1, 2, 3, 4, 5, 6, 7, 8, 9}) {
 		if valid_move(g, idx, b) {
 			b[idx] = g
 			if solver(b, ch) {
@@ -112,7 +112,7 @@ func plucker(keep int, b board) (board, int) {
 		}
 		return out
 	}
-	var shuffle_idx = func(a [81]int) [81]int {
+	var shuffle = func(a [81]int) [81]int {
 		rand.Seed(time.Now().UnixNano())
 		for i := len(a) - 1; i > 0; i-- {
 			var j = rand.Intn(i + 1)
@@ -123,7 +123,7 @@ func plucker(keep int, b board) (board, int) {
 	var left = len(b)
 	var tmp byte
 	var unique bool
-	for _, idx := range shuffle_idx(nline()) {
+	for _, idx := range shuffle(nline()) {
 		if left <= keep {
 			return b, left
 		}
