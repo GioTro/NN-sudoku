@@ -43,14 +43,14 @@ func listen(n, keep int, ch chan board, ch_out chan set, wg *sync.WaitGroup) {
 func main() {
 	runtime.GOMAXPROCS(8)
 
-	// currently it can generate a valid board in ~.01 seconds
-	// There is a lot of overhead in running this concurrently
-	// Pick suitable settings for you machine and fly like a falcon.
+	// 1 million boards ~30minutes on my machine.
+	// There is a lot of overhead in running this concurrently,
+	// but does what it is supposed to do in reasonable time.
+	// Pick suitable settings for your machine and fly like a falcon.
 
 	const n = int(1e5)
 	const n_per_batch = int(1e4)
 	var out = make([]set, n)
-	//var ch = make(chan set)
 	var idx int
 
 	var start = time.Now()
