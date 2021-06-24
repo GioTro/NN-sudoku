@@ -5,18 +5,18 @@ import torch
 
 class Utils:
     @staticmethod
-    def load_file(path : Path or str) -> Tuple[np.array, np.array]:
-        with open(path, 'r') as f:
-            X = f.readline()
-            y = f.readline()
-        
-        X = np.array(list(map(int, X.split(','))))
-        y = np.array(list(map(int, X.split(','))))
+    def load_file(path : Path or str) -> list:
+        with open(path, "r") as f:
+            raw_data = f.readlines()
+        return raw_data
 
-        return X.reshape(9, 9), y.reshape(9, 9)
     
     @staticmethod
-    def pre_process(X : np.array, y : np.array) -> Tuple[torch.Tensor, torch.Tensor]:
+    def preprocess(input : str) -> Tuple[torch.Tensor, torch.Tensor]:
+        toarray = lambda x : np.array(list(map(int, list(x)))).reshape(9, 9)
+
+        X, y = input.split()
+        X, y = toarray(X), toarray(y)
         X = torch.tensor(X, dtype=torch.long)[None, :, :]
         y = torch.tensor(y, torch.long)[None, :, :]
         return X, y

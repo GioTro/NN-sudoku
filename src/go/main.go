@@ -64,7 +64,7 @@ func main() {
 		}
 		fmt.Println("Generated ", idx, " elapsed time ", time.Since(start).Minutes(), " minutes!")
 	}
-	var duration = time.Since(start).Seconds()
+	var duration = time.Since(start).Minutes()
 
 	fmt.Println(duration)
 	save_data(out, "sudoku.txt")
