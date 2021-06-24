@@ -30,6 +30,14 @@ func save_data() {
 	return
 }
 
+func save_data_readable() {
+	return
+}
+
+func load_data_readable() {
+	return
+}
+
 func preprocess() {
 	return
 }
