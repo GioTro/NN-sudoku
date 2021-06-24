@@ -1,9 +1,7 @@
 package main
 
 import (
-	"fmt"
 	"math/rand"
-	"strconv"
 	"time"
 )
 
@@ -11,23 +9,6 @@ type board [81]byte
 
 type set struct {
 	solved, unsolved board
-}
-
-func pretty_print(b board) {
-	var s string
-	for idx := range b {
-		if idx%9 == 0 {
-			s += "\n"
-			if idx%27 == 0 {
-				s += "\n"
-			}
-		}
-		if idx%3 == 0 {
-			s += "   "
-		}
-		s += strconv.Itoa(int(b[idx])) + " "
-	}
-	fmt.Println(s)
 }
 
 func valid_board(b board) bool {
@@ -163,23 +144,4 @@ func plucker(keep int, b board) (board, int) {
 		}
 	}
 	return b, left
-}
-
-func process(keep int, ch_out chan<- set) {
-	var b, c board
-	var left int
-
-	// var solved board
-	var out = make(chan board)
-	go solver(b, out)
-	b = <-out
-	c, left = plucker(keep, b)
-	if left > keep {
-		process(keep, ch_out)
-	} else {
-		ch_out <- set{
-			solved:   b,
-			unsolved: c,
-		}
-	}
 }
