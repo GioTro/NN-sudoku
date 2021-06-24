@@ -1,5 +1,5 @@
 # NN-sudoku
-> Work and progress far from finito. Want to lay the ground work then use digits from mnist to solve from images.
+> Work and progress far from finito. Want to lay the groundwork then maybe use digits from mnist to solve from images.
 
 Sudoku solver composed of a CNN.
 
