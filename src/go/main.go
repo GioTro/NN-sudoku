@@ -51,27 +51,27 @@ type sudoku struct {
 // 	return true
 // }
 
-func push(n int, ch chan<- bool) {
-	for i := 0; i < n; i++ {
-		ch <- true
-	}
-}
-func plistener(n_workers int, n int, ch_in chan board, ch_out chan sudoku) {
-	var idx = make_indexmap()
-	var signal = make(chan bool)
-	go push(n, signal)
+// func push(n int, ch chan<- bool) {
+// 	for i := 0; i < n; i++ {
+// 		ch <- true
+// 	}
+// }
+// func plistener(n_workers int, n int, ch_in chan board, ch_out chan sudoku) {
+// 	var idx = make_indexmap()
+// 	var signal = make(chan bool)
+// 	go push(n, signal)
 
-	for i := 0; i < n_workers; i++ {
-		go solver(50, ch_in, ch_out)
-		go worker(n_workers, &idx, ch_in, signal)
-	}
-}
+// 	for i := 0; i < n_workers; i++ {
+// 		go solver(50, ch_in, ch_out)
+// 		go worker(n_workers, &idx, ch_in, signal)
+// 	}
+// }
 
-func single(keep int, idx *indexmap, ch_in chan<- [][]int8) {
-	var b = make_board(idx)
-	make_valid_board(b)
-	ch_in <- (*b).board
-}
+// func single(keep int, idx *indexmap, ch_in chan<- [][]int8) {
+// 	var b = make_board(idx)
+// 	make_valid_board(b)
+// 	ch_in <- (*b).board
+// }
 
 func main() {
 
@@ -81,33 +81,46 @@ func main() {
 	// but I will likely use this setup because this
 	// is taking too much time.
 
-	const n = int(1)
-
-	var out [n][][]int8
-	//var ch_out = make(chan sudoku)
-	var ch_out = make(chan [][]int8)
+	const n = int(1000)
+	//var idx = make_indexmap()
+	var out [n]set
 
 	var start = time.Now()
-	var idx = make_indexmap()
-	//go plistener(1, n, ch_in, ch_out)
-
 	for i := 0; i < n; i++ {
-		go single(50, &idx, ch_out)
-	}
-
-	var count int
-	for i := 0; i < n; i++ {
-		out[count] = <-ch_out
-		count++
+		out[i] = process(40)
 	}
 	var duration = time.Since(start).Seconds()
 
-	for _, b := range out {
-		var idx = make_indexmap()
-		fmt.Println(valid_board(&b, &idx))
+	for _, o := range out {
+		fmt.Println(valid_board(o.solved))
 	}
-
 	fmt.Println(duration)
+
+	// var out [n][][]int8
+	// //var ch_out = make(chan sudoku)
+	// var ch_out = make(chan [][]int8)
+
+	// var start = time.Now()
+	// var idx = make_indexmap()
+	// //go plistener(1, n, ch_in, ch_out)
+
+	// for i := 0; i < n; i++ {
+	// 	go single(50, &idx, ch_out)
+	// }
+
+	// var count int
+	// for i := 0; i < n; i++ {
+	// 	out[count] = <-ch_out
+	// 	count++
+	// }
+	// var duration = time.Since(start).Seconds()
+
+	// for _, b := range out {
+	// 	var idx = make_indexmap()
+	// 	fmt.Println(valid_board(&b, &idx))
+	// }
+
+	// fmt.Println(duration)
 	// var n_train = int(1e3) // how training examples to generate
 	// var n_val = int(0)     // how val examples to generate
 	// var n_test = int(0)    // how test examples to generate
