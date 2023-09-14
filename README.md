@@ -1,7 +1,7 @@
-# NN-sudoku
-> Work and progress far from finito. Want to lay the groundwork then maybe use digits from mnist to solve from images.
+# Sudoku Solver
 
-Sudoku solver composed of a CNN.
+Sudoku solver and a generator of unsolved boards.
+
 
 ## Resources
 - [Akin-David and Mantey, ‘Solving Sudoku with Neural Networks’.](https://cs230.stanford.edu/files_winter_2018/projects/6939771.pdf)
